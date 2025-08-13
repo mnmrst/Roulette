@@ -38,18 +38,30 @@ class RouletteApp {
     const enabledOptions = this.optionsManager.getEnabledOptions();
     
     if (enabledOptions.length < 2) {
-      alert('Please enable at least 2 options');
+      this.showError('Please enable at least 2 options');
       return;
     }
     
     if (enabledOptions.length > 100) {
-      alert('You can have up to 100 enabled options');
+      this.showError('You can have up to 100 enabled options');
       return;
     }
     
     this.state.angle = 0;
     this.state.angularVelocity = 0.3 + Math.random() * 0.3;
     this.animationManager.start();
+  }
+  
+  // エラーメッセージ表示
+  showError(message) {
+    const errorElement = document.getElementById('errorMessage');
+    errorElement.textContent = message;
+    errorElement.style.display = 'flex';
+    
+    // 3秒後に自動的に非表示
+    setTimeout(() => {
+      errorElement.style.display = 'none';
+    }, 3000);
   }
   
   // 結果表示
@@ -364,7 +376,7 @@ class RouletteRenderer {
     animate();
   }
   
-  // シンプルな光るエフェクトを描画
+  // フラットな光るエフェクトを描画
   drawSimpleGlowEffect(result, progress) {
     const enabledOptions = this.app.optionsManager.getEnabledOptions();
     const segments = enabledOptions.length;
@@ -383,23 +395,17 @@ class RouletteRenderer {
     this.ctx.save();
     this.ctx.globalCompositeOperation = 'screen'; // 光る効果
     
-    // シンプルな光る効果（フェードイン→フェードアウト）
-    const glowIntensity = Math.sin(progress * Math.PI) * 0.8;
+    // フラットな光る効果（フェードイン→フェードアウト）
+    const glowIntensity = Math.sin(progress * Math.PI) * 0.6;
     
-    // セグメント全体を光らせる
-    const glowGradient = this.ctx.createRadialGradient(
-      this.center, this.center, 0,
-      this.center, this.center, radius
-    );
-    glowGradient.addColorStop(0, `rgba(255, 255, 255, ${glowIntensity * 0.4})`);
-    glowGradient.addColorStop(0.7, `rgba(255, 255, 255, ${glowIntensity * 0.2})`);
-    glowGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    // フラットな光の色（白）
+    this.ctx.fillStyle = `rgba(255, 255, 255, ${glowIntensity})`;
     
+    // セグメント全体をフラットに光らせる
     this.ctx.beginPath();
     this.ctx.moveTo(this.center, this.center);
     this.ctx.arc(this.center, this.center, radius, startAngle, endAngle);
     this.ctx.closePath();
-    this.ctx.fillStyle = glowGradient;
     this.ctx.fill();
     
     this.ctx.restore();
