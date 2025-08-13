@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>Simple Roulette</title>
+<style>
+  body { font-family: sans-serif; margin: 30px; text-align: center; }
+  #container {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    justify-content: center;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  canvas { background: #f8fafc; border-radius: 50%; border: 2px solid #e2e8f0; }
+  textarea {
+    width: 200px;
+    height: 300px;
+    font-size: 14px;
+    padding: 10px;
+    resize: vertical;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit;
+  }
+  #result { margin-top: 20px; font-size: 1.2em; }
+  button {
+    margin-top: 10px;
+    font-size: 1.1em;
+    padding: 8px 16px;
+    cursor: pointer;
+    background-color: #6366F1;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+  }
+  
+  button:hover {
+    background-color: #4F46E5;
+  }
+  
+  button:disabled {
+    background-color: #9CA3AF;
+    cursor: not-allowed;
+  }
+</style>
+</head>
+<body>
+
+<h1>Simple Roulette</h1>
+
+<div id="container">
+  <canvas id="roulette" width="300" height="300"></canvas>
+  <div>
+    <textarea id="optionsInput" placeholder="Enter options here, one per line&#10;Example:&#10;Apple&#10;Banana&#10;Orange"></textarea>
+    <br/>
+    <button id="startBtn">Start</button>
+    <div id="result"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('roulette');
+  const ctx = canvas.getContext('2d');
+  const size = canvas.width;
+  const center = size / 2;
+
+  let labels = ['Apple', 'Banana', 'Orange', 'Melon', 'Grape', 'Peach'];  // 初期選択肢
+  let colors = []; // 選択肢ごとの色を保存
+  
+  // 動的に色を生成する関数
+  function generateColors(count) {
+    const colors = [];
+    for (let i = 0; i < count; i++) {
+      // HSL色空間を使用して均等に色を分布
+      const hue = (i * 360 / count) % 360;
+      const saturation = 70 + Math.random() * 20; // 70-90%
+      const lightness = 45 + Math.random() * 15;   // 45-60%
+      colors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+    }
+    return colors;
+  }
+
+  let angle = 0;
+  let angularVelocity = 0;
+  let animationId = null;
+  const friction = 0.98;
+  const resultDiv = document.getElementById('result');
+  const startBtn = document.getElementById('startBtn');
+  const optionsInput = document.getElementById('optionsInput');
+
+  function drawRoulette(rot) {
+    ctx.clearRect(0, 0, size, size);
+    const segments = labels.length;
+    
+    // 選択肢が1つの場合は円全体を描画
+    if (segments === 1) {
+      ctx.beginPath();
+      ctx.arc(center, center, center - 10, 0, 2 * Math.PI);
+      ctx.fillStyle = colors[0];
+      ctx.fill();
+      
+      ctx.save();
+      ctx.translate(center, center);
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#fff";
+      ctx.font = "16px sans-serif";
+      ctx.fillText(labels[0], 0, 5);
+      ctx.restore();
+    } else {
+      const arc = (2 * Math.PI) / segments;
+
+      for(let i = 0; i < segments; i++) {
+        const startAngle = i * arc + rot;
+        const endAngle = startAngle + arc;
+
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.arc(center, center, center - 10, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = colors[i];
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(center, center);
+        ctx.rotate(startAngle + arc / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#fff";
+        ctx.font = "16px sans-serif";
+        ctx.fillText(labels[i], center - 20, 10);
+        ctx.restore();
+      }
+    }
+
+    // 中心の矢印
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    ctx.moveTo(center, 10);
+    ctx.lineTo(center - 15, 40);
+    ctx.lineTo(center + 15, 40);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function animate() {
+    if (angularVelocity > 0.002) {
+      angle += angularVelocity;
+      angularVelocity *= friction;
+      drawRoulette(angle);
+      animationId = requestAnimationFrame(animate);
+    } else {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+      angularVelocity = 0;
+      showResult();
+      startBtn.disabled = false;
+    }
+  }
+
+  function showResult() {
+    let normalizedAngle = angle % (2 * Math.PI);
+    if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
+
+    const segments = labels.length;
+    const arc = (2 * Math.PI) / segments;
+    let index = Math.floor(((2 * Math.PI) - normalizedAngle + arc / 2) / arc) % segments;
+
+    resultDiv.textContent = `Result: ${labels[index]}!`;
+  }
+
+  // 選択肢と色を更新する関数
+  function updateLabelsAndColors(newLabels) {
+    labels = newLabels;
+    colors = generateColors(labels.length);
+  }
+
+  // 入力欄の変更を監視してルーレットを更新
+  function updateRouletteFromInput() {
+    const inputLabels = optionsInput.value.split('\n').map(s => s.trim()).filter(s => s !== '');
+    if (inputLabels.length >= 1 && inputLabels.length <= 100) {
+      updateLabelsAndColors(inputLabels);
+      // アニメーション中でない場合のみ描画を更新
+      if (!animationId) {
+        drawRoulette(angle);
+      }
+    }
+  }
+
+  // 入力欄の変更イベントを監視
+  optionsInput.addEventListener('input', updateRouletteFromInput);
+
+  startBtn.addEventListener('click', () => {
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+    resultDiv.textContent = '';
+
+    // 入力欄から選択肢取得し、空行や空白は除去
+    const inputLabels = optionsInput.value.split('\n').map(s => s.trim()).filter(s => s !== '');
+    if (inputLabels.length < 2) {
+      alert('Please enter at least 2 options');
+      return;
+    }
+    if (inputLabels.length > 100) {
+      alert('You can enter up to 100 options');
+      return;
+    }
+    updateLabelsAndColors(inputLabels);
+
+    angularVelocity = 0.3 + Math.random() * 0.3;
+    startBtn.disabled = true;
+    animate();
+  });
+
+  // 初期色を生成
+  colors = generateColors(labels.length);
+
+  // 初期描画
+  drawRoulette(angle);
+
+  // テキストエリアに初期選択肢をセット
+  optionsInput.value = labels.join('\n');
+})();
+</script>
+
+</body>
+</html>
