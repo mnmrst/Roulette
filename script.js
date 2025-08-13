@@ -31,6 +31,9 @@ class RouletteApp {
     this.settingsManager.loadSettings(this);
     this.renderer.draw();
     this.eventManager.bindEvents();
+    
+    // 初期化時に結果要素をクリア
+    document.getElementById('resultValue').textContent = '';
   }
   
   // ルーレット開始
@@ -48,7 +51,7 @@ class RouletteApp {
     }
     
     this.state.angle = 0;
-    this.state.angularVelocity = 0.3 + Math.random() * 0.3;
+    this.state.angularVelocity = 0.09 + Math.random() * 0.09;
     this.animationManager.start();
   }
   
@@ -67,9 +70,12 @@ class RouletteApp {
   // 結果表示
   showResult() {
     const result = this.calculateResult();
-    if (!result) return;
+    if (!result) {
+      document.getElementById('resultValue').textContent = '';
+      return;
+    }
     
-    document.getElementById('result').textContent = `Result: ${result}!`;
+    document.getElementById('resultValue').textContent = result;
     this.state.currentResult = result;
     
     // シンプルな光るアニメーションを実行
@@ -92,7 +98,6 @@ class RouletteApp {
   calculateResult() {
     const enabledOptions = this.optionsManager.getEnabledOptions();
     if (enabledOptions.length === 0) {
-      document.getElementById('result').textContent = 'No enabled options';
       return null;
     }
     
@@ -209,7 +214,7 @@ class OptionsManager {
 class AnimationManager {
   constructor(app) {
     this.app = app;
-    this.friction = 0.98;
+    this.friction = 0.992;
   }
   
   start() {
@@ -217,7 +222,7 @@ class AnimationManager {
       cancelAnimationFrame(this.app.state.animationId);
     }
     
-    document.getElementById('result').textContent = '';
+    document.getElementById('resultValue').textContent = '';
     document.getElementById('startBtn').disabled = true;
     this.animate();
   }
@@ -446,9 +451,18 @@ class HistoryManager {
     
     if (this.history.length === 0) {
       const emptyMessage = document.createElement('div');
-      emptyMessage.textContent = 'No results yet. Start the roulette to see results here.';
-      emptyMessage.style.color = '#6b7280';
-      emptyMessage.style.fontStyle = 'italic';
+      emptyMessage.className = 'result-item empty-history';
+      
+      const emptyText = document.createElement('div');
+      emptyText.className = 'result-text empty-text';
+      emptyText.textContent = 'No results yet';
+      
+      const emptyTime = document.createElement('div');
+      emptyTime.className = 'result-time';
+      emptyTime.textContent = '';
+      
+      emptyMessage.appendChild(emptyText);
+      emptyMessage.appendChild(emptyTime);
       container.appendChild(emptyMessage);
       return;
     }
@@ -458,6 +472,7 @@ class HistoryManager {
       resultItem.className = 'result-item';
       
       const resultText = document.createElement('div');
+      resultText.className = 'result-text';
       resultText.textContent = item.result;
       
       const timeText = document.createElement('div');
@@ -530,6 +545,7 @@ class EventManager {
     this.bindOptionsEvents();
     this.bindHistoryEvents();
     this.bindKeyboardEvents();
+    this.bindTabEvents();
   }
   
   bindStartButton() {
@@ -591,6 +607,27 @@ class EventManager {
           startBtn.click();
         }
       }
+    });
+  }
+  
+  bindTabEvents() {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const targetTab = button.getAttribute('data-tab');
+        
+        // すべてのタブボタンからactiveクラスを削除
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        // クリックされたボタンにactiveクラスを追加
+        button.classList.add('active');
+        
+        // すべてのタブパネルを非表示
+        tabPanels.forEach(panel => panel.classList.remove('active'));
+        // 対象のタブパネルを表示
+        document.getElementById(`${targetTab}-tab`).classList.add('active');
+      });
     });
   }
   

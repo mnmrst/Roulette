@@ -2,52 +2,67 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simple Roulette</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<h1>Simple Roulette</h1>
-
 <div id="errorMessage" class="error-message" style="display: none;"></div>
 
-<div class="container">
-    <div class="row-container">
-        <div class="column-container">
-            <canvas id="roulette" width="300" height="300"></canvas>
-            <button id="startBtn">Start</button>
-        </div> 
-        <div class="options-container">
-            <div id="resultActions" class="result-actions">
-                <label class="toggle-option">
-                    <input type="checkbox" id="disableResultOption">
-                    Auto-disable
-                </label>
-            </div>
-            <div class="options-container" id="optionsContainer">
-                <!-- 選択肢がここに動的に追加されます -->
-            </div>
-            <div class="add-option">
-                <input type="text" id="newOptionInput" placeholder="Add new option">
-                <button id="addOptionBtn">Add</button>
+<div id="container">
+    <div class="main-content">
+        <div class="row-container">
+            <div class="column-container">
+                <canvas id="roulette" width="300" height="300"></canvas>
+                <button id="startBtn">Spin</button>
+            </div> 
+            <div class="side-panel">
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" data-tab="options">Options</button>
+                        <button class="tab-btn" data-tab="history">History</button>
+                    </div>
+                    
+                    <div class="tab-content">
+                        <div id="options-tab" class="tab-panel active">
+                            <div class="options-section">
+                                <div class="options-container" id="optionsContainer">
+                                    <!-- 選択肢がここに動的に追加されます -->
+                                </div>
+                                <div class="add-option">
+                                    <input type="text" id="newOptionInput" placeholder="Add new option">
+                                    <button id="addOptionBtn">Add</button>
+                                </div>
+                                <div id="resultActions" class="result-actions">
+                                    <label class="toggle-option">
+                                        <input type="checkbox" id="disableResultOption">
+                                        Auto-disable
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="history-tab" class="tab-panel">
+                            <div class="results-log">
+                                <div id="resultsContainer">
+                                    <!-- 結果ログがここに動的に追加されます -->
+                                </div>
+                                <div class="results-footer">
+                                    <button id="resetHistoryBtn" class="reset-btn">Reset</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
-<div class="container">
-    <div class="row-container">
-        <div class="column-container">
-            <div id="result"></div>
-            <div class="results-log">
-              <div class="results-header">
-                <h3>Results History</h3>
-                <button id="resetHistoryBtn" class="reset-btn">Reset</button>
-              </div>
-              <div id="resultsContainer">
-                <!-- 結果ログがここに動的に追加されます -->
-              </div>
+        
+        <div class="roulette-results-section">
+            <div id="result">
+                <span class="result-label">Result:</span>
+                <span class="result-value" id="resultValue"></span>
             </div>
-          </div>
         </div>
     </div>
 </div>
