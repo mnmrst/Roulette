@@ -12,7 +12,9 @@ class RouletteApp {
       angularVelocity: 0,
       animationId: null,
       currentResult: null,
-      autoDisableEnabled: false
+      isSpinning: false,
+      lockedOptions: null, // 回転中に固定するオプション
+      pendingOptionsChange: false // オプション変更の保留フラグ
     };
     
     // モジュールの初期化
@@ -21,7 +23,7 @@ class RouletteApp {
     this.renderer = new RouletteRenderer(this);
     this.historyManager = new HistoryManager();
     this.settingsManager = new SettingsManager();
-    this.eventManager = new EventManager(this);
+    this.eventManager = new RouletteEventManager(this);
     
     // 初期化
     this.init();
@@ -29,11 +31,27 @@ class RouletteApp {
   
   init() {
     this.settingsManager.loadSettings(this);
+    this.loadSavedOptions();
+    this.optionsManager.updateColors();
     this.renderer.draw();
     this.eventManager.bindEvents();
     
     // 初期化時に結果要素をクリア
-    document.getElementById('resultValue').textContent = '';
+    const resultElement = document.getElementById('resultValue');
+    if (resultElement) {
+      resultElement.textContent = '';
+    }
+  }
+  
+  // 保存されたオプションを読み込み
+  loadSavedOptions() {
+    const savedOptions = this.settingsManager.loadTextareaValue('rouletteOptions');
+    if (savedOptions) {
+      const optionsTextarea = document.getElementById('rouletteOptions');
+      if (optionsTextarea) {
+        optionsTextarea.value = savedOptions;
+      }
+    }
   }
   
   // ルーレット開始
@@ -41,52 +59,42 @@ class RouletteApp {
     const enabledOptions = this.optionsManager.getEnabledOptions();
     
     if (enabledOptions.length < 2) {
-      this.showError('Please enable at least 2 options');
+      ErrorManager.showError('Please enable at least 2 options');
       return;
     }
     
     if (enabledOptions.length > 100) {
-      this.showError('You can have up to 100 enabled options');
+      ErrorManager.showError('You can have up to 100 enabled options');
       return;
     }
     
+    // 回転開始時にオプションを固定
+    this.state.lockedOptions = [...enabledOptions];
+    this.state.isSpinning = true;
+    this.state.pendingOptionsChange = false;
     this.state.angle = 0;
     this.state.angularVelocity = 0.09 + Math.random() * 0.09;
     this.animationManager.start();
   }
   
-  // エラーメッセージ表示
-  showError(message) {
-    const errorElement = document.getElementById('errorMessage');
-    errorElement.textContent = message;
-    errorElement.style.display = 'flex';
-    
-    // 3秒後に自動的に非表示
-    setTimeout(() => {
-      errorElement.style.display = 'none';
-    }, 3000);
-  }
-  
   // 結果表示
   showResult() {
     const result = this.calculateResult();
+    const resultElement = document.getElementById('resultValue');
+    if (!resultElement) return;
+    
     if (!result) {
-      document.getElementById('resultValue').textContent = '';
+      resultElement.textContent = '';
       return;
     }
     
-    document.getElementById('resultValue').textContent = result;
+    resultElement.textContent = result;
     this.state.currentResult = result;
     
     // シンプルな光るアニメーションを実行
     this.renderer.showSimpleGlowAnimation(result, () => {
-      // アニメーション終了後の処理
-      if (this.state.autoDisableEnabled) {
-        this.optionsManager.disableOption(result);
-        this.renderer.draw();
-        // チェックボックスの状態を更新
-        this.eventManager.updateOptionsDisplay();
-      }
+      // アニメーション完了後の処理
+      this.onGlowAnimationComplete();
     });
     
     // 履歴に追加
@@ -94,9 +102,27 @@ class RouletteApp {
     this.settingsManager.saveSettings(this);
   }
   
+  // 光るアニメーション完了後の処理
+  onGlowAnimationComplete() {
+    // 回転終了時にオプションの固定を解除
+    this.state.isSpinning = false;
+    this.state.lockedOptions = null;
+    
+    // 保留中のオプション変更があれば反映
+    if (this.state.pendingOptionsChange) {
+      this.state.pendingOptionsChange = false;
+      this.optionsManager.updateColors();
+      this.renderer.draw();
+    }
+  }
+  
   // 結果計算（シンプルな方法）
   calculateResult() {
-    const enabledOptions = this.optionsManager.getEnabledOptions();
+    // 回転中は固定されたオプションを使用
+    const enabledOptions = this.state.isSpinning && this.state.lockedOptions 
+      ? this.state.lockedOptions 
+      : this.optionsManager.getEnabledOptions();
+      
     if (enabledOptions.length === 0) {
       return null;
     }
@@ -119,57 +145,49 @@ class RouletteApp {
     
     return enabledOptions[index].text;
   }
+  
+  // 回転中かどうかをチェック
+  isSpinning() {
+    return this.state.isSpinning;
+  }
+  
+  // オプション変更を保留
+  markOptionsChangePending() {
+    if (this.state.isSpinning) {
+      this.state.pendingOptionsChange = true;
+    }
+  }
 }
 
 // 選択肢管理クラス
 class OptionsManager {
   constructor() {
-    this.options = [
-      { text: 'Apple', enabled: true },
-      { text: 'Banana', enabled: true },
-      { text: 'Orange', enabled: true },
-      { text: 'Melon', enabled: true },
-      { text: 'Grape', enabled: true },
-      { text: 'Peach', enabled: true }
-    ];
     this.colors = [];
     this.updateColors();
   }
   
   getEnabledOptions() {
-    return this.options.filter(option => option.enabled);
-  }
-  
-  addOption(text) {
-    if (text.trim() && this.options.length < 100) {
-      this.options.push({ text: text.trim(), enabled: true });
-      this.updateColors();
-      return true;
-    }
-    return false;
-  }
-  
-  removeOption(index) {
-    this.options.splice(index, 1);
-    this.updateColors();
-  }
-  
-  toggleOption(index, enabled) {
-    this.options[index].enabled = enabled;
-    this.updateColors();
-  }
-  
-  disableOption(text) {
-    const option = this.options.find(opt => opt.text === text);
-    if (option) {
-      option.enabled = false;
-      this.updateColors();
-    }
+    const textarea = document.getElementById('rouletteOptions');
+    if (!textarea) return [];
+    
+    const options = textarea.value
+      .split('\n')
+      .map(option => option.trim())
+      .filter(option => option !== '');
+    
+    return options.map(text => ({ text }));
   }
   
   updateColors() {
     const enabledCount = this.getEnabledOptions().length;
     this.colors = this.generateColors(enabledCount);
+  }
+  
+  // 回転中でない場合のみ色を更新
+  updateColorsIfNotSpinning(app) {
+    if (!app.isSpinning()) {
+      this.updateColors();
+    }
   }
   
   generateColors(count) {
@@ -199,15 +217,6 @@ class OptionsManager {
     }
     return colors;
   }
-  
-  getOptions() {
-    return this.options;
-  }
-  
-  setOptions(options) {
-    this.options = options;
-    this.updateColors();
-  }
 }
 
 // アニメーション管理クラス
@@ -222,8 +231,16 @@ class AnimationManager {
       cancelAnimationFrame(this.app.state.animationId);
     }
     
-    document.getElementById('resultValue').textContent = '';
-    document.getElementById('startBtn').disabled = true;
+    const resultElement = document.getElementById('resultValue');
+    if (resultElement) {
+      resultElement.textContent = '';
+    }
+    
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) {
+      startBtn.disabled = true;
+    }
+    
     this.animate();
   }
   
@@ -243,7 +260,11 @@ class AnimationManager {
     this.app.state.animationId = null;
     this.app.state.angularVelocity = 0;
     this.app.showResult();
-    document.getElementById('startBtn').disabled = false;
+    
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) {
+      startBtn.disabled = false;
+    }
   }
 }
 
@@ -260,7 +281,10 @@ class RouletteRenderer {
   draw() {
     this.ctx.clearRect(0, 0, this.size, this.size);
     
-    const enabledOptions = this.app.optionsManager.getEnabledOptions();
+    // 回転中は固定されたオプションを使用、そうでなければ現在のオプションを使用
+    const enabledOptions = this.app.state.isSpinning && this.app.state.lockedOptions 
+      ? this.app.state.lockedOptions 
+      : this.app.optionsManager.getEnabledOptions();
     const segments = enabledOptions.length;
     
     // 背景円
@@ -347,11 +371,6 @@ class RouletteRenderer {
     this.ctx.fill();
   }
   
-  parseColor(color) {
-    // 16進数カラーコードを解析（HSLは使用しないため簡略化）
-    return { h: 0, s: 0, l: 50 };
-  }
-  
   // シンプルな光るアニメーション
   showSimpleGlowAnimation(result, callback = null) {
     const animationDuration = 600; // 0.6秒
@@ -383,7 +402,10 @@ class RouletteRenderer {
   
   // フラットな光るエフェクトを描画
   drawSimpleGlowEffect(result, progress) {
-    const enabledOptions = this.app.optionsManager.getEnabledOptions();
+    // 回転中は固定されたオプションを使用、そうでなければ現在のオプションを使用
+    const enabledOptions = this.app.state.isSpinning && this.app.state.lockedOptions 
+      ? this.app.state.lockedOptions 
+      : this.app.optionsManager.getEnabledOptions();
     const segments = enabledOptions.length;
     
     if (segments === 0) return;
@@ -417,125 +439,8 @@ class RouletteRenderer {
   }
 }
 
-// 履歴管理クラス
-class HistoryManager {
-  constructor() {
-    this.history = [];
-    this.maxHistory = 20;
-  }
-  
-  addResult(result, angle) {
-    const now = new Date();
-    this.history.unshift({
-      result: result,
-      time: now.toLocaleTimeString(),
-      timestamp: now.getTime(),
-      angle: angle
-    });
-    
-    if (this.history.length > this.maxHistory) {
-      this.history = this.history.slice(0, this.maxHistory);
-    }
-    
-    this.render();
-  }
-  
-  clearHistory() {
-    this.history = [];
-    this.render();
-  }
-  
-  render() {
-    const container = document.getElementById('resultsContainer');
-    container.innerHTML = '';
-    
-    if (this.history.length === 0) {
-      const emptyMessage = document.createElement('div');
-      emptyMessage.className = 'result-item empty-history';
-      
-      const emptyText = document.createElement('div');
-      emptyText.className = 'result-text empty-text';
-      emptyText.textContent = 'No results yet';
-      
-      const emptyTime = document.createElement('div');
-      emptyTime.className = 'result-time';
-      emptyTime.textContent = '';
-      
-      emptyMessage.appendChild(emptyText);
-      emptyMessage.appendChild(emptyTime);
-      container.appendChild(emptyMessage);
-      return;
-    }
-    
-    this.history.forEach(item => {
-      const resultItem = document.createElement('div');
-      resultItem.className = 'result-item';
-      
-      const resultText = document.createElement('div');
-      resultText.className = 'result-text';
-      resultText.textContent = item.result;
-      
-      const timeText = document.createElement('div');
-      timeText.className = 'result-time';
-      timeText.textContent = item.time;
-      
-      resultItem.appendChild(resultText);
-      resultItem.appendChild(timeText);
-      container.appendChild(resultItem);
-    });
-  }
-  
-  getHistory() {
-    return this.history;
-  }
-  
-  setHistory(history) {
-    this.history = history;
-    this.render();
-  }
-}
-
-// 設定管理クラス
-class SettingsManager {
-  constructor() {
-    this.storageKeys = {
-      options: 'rouletteOptions',
-      history: 'rouletteHistory',
-      autoDisable: 'autoDisableEnabled'
-    };
-  }
-  
-  saveSettings(app) {
-    localStorage.setItem(this.storageKeys.options, JSON.stringify(app.optionsManager.getOptions()));
-    localStorage.setItem(this.storageKeys.history, JSON.stringify(app.historyManager.getHistory()));
-    localStorage.setItem(this.storageKeys.autoDisable, JSON.stringify(app.state.autoDisableEnabled));
-  }
-  
-  loadSettings(app) {
-    const savedOptions = localStorage.getItem(this.storageKeys.options);
-    const savedHistory = localStorage.getItem(this.storageKeys.history);
-    const savedAutoDisable = localStorage.getItem(this.storageKeys.autoDisable);
-    
-    if (savedOptions) {
-      app.optionsManager.setOptions(JSON.parse(savedOptions));
-    }
-    if (savedHistory) {
-      app.historyManager.setHistory(JSON.parse(savedHistory));
-    }
-    if (savedAutoDisable) {
-      app.state.autoDisableEnabled = JSON.parse(savedAutoDisable);
-    }
-    
-    // チェックボックスの状態を確実に同期
-    const autoDisableCheckbox = document.getElementById('disableResultOption');
-    if (autoDisableCheckbox) {
-      autoDisableCheckbox.checked = app.state.autoDisableEnabled;
-    }
-  }
-}
-
-// イベント管理クラス
-class EventManager {
+// ルーレットイベント管理クラス
+class RouletteEventManager {
   constructor(app) {
     this.app = app;
   }
@@ -549,53 +454,49 @@ class EventManager {
   }
   
   bindStartButton() {
-    document.getElementById('startBtn').addEventListener('click', () => {
-      this.app.start();
-    });
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) {
+      startBtn.addEventListener('click', () => {
+        this.app.start();
+      });
+    }
   }
   
   bindOptionsEvents() {
-    // 選択肢追加
-    const addOptionBtn = document.getElementById('addOptionBtn');
-    const newOptionInput = document.getElementById('newOptionInput');
-    
-    addOptionBtn.addEventListener('click', () => {
-      if (this.app.optionsManager.addOption(newOptionInput.value)) {
-        this.updateOptionsDisplay();
-        this.app.renderer.draw();
-        newOptionInput.value = '';
-        this.app.settingsManager.saveSettings(this.app);
-      }
-    });
-    
-    newOptionInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        addOptionBtn.click();
-      }
-    });
-    
-    // 自動無効化トグル
-    document.getElementById('disableResultOption').addEventListener('change', (e) => {
-      this.app.state.autoDisableEnabled = e.target.checked;
-      this.app.settingsManager.saveSettings(this.app);
-    });
-    
-    // 初期状態をチェックボックスに反映
-    const autoDisableCheckbox = document.getElementById('disableResultOption');
-    if (autoDisableCheckbox) {
-      autoDisableCheckbox.checked = this.app.state.autoDisableEnabled;
+    // テキストエリアの変更を監視
+    const rouletteOptions = document.getElementById('rouletteOptions');
+    if (rouletteOptions) {
+      // デバウンス処理で自動保存
+      const debouncedSave = Utils.debounce((value) => {
+        this.app.settingsManager.saveTextareaValue('rouletteOptions', value);
+      }, 500);
+      
+      rouletteOptions.addEventListener('input', (event) => {
+        const value = event.target.value;
+        
+        // 回転中でない場合のみオプションを更新
+        if (!this.app.isSpinning()) {
+          this.app.optionsManager.updateColors();
+          this.app.renderer.draw();
+        } else {
+          // 回転中の場合は変更を保留
+          this.app.markOptionsChangePending();
+        }
+        
+        // 自動保存
+        debouncedSave(value);
+      });
     }
-    
-    this.updateOptionsDisplay();
   }
   
   bindHistoryEvents() {
-    document.getElementById('resetHistoryBtn').addEventListener('click', () => {
-      if (confirm('Are you sure you want to clear all results history?')) {
+    const resetHistoryBtn = document.getElementById('resetHistoryBtn');
+    if (resetHistoryBtn) {
+      resetHistoryBtn.addEventListener('click', () => {
         this.app.historyManager.clearHistory();
         this.app.settingsManager.saveSettings(this.app);
-      }
-    });
+      });
+    }
   }
   
   bindKeyboardEvents() {
@@ -603,7 +504,7 @@ class EventManager {
       if (e.key === 'Enter' && e.ctrlKey) {
         e.preventDefault();
         const startBtn = document.getElementById('startBtn');
-        if (!startBtn.disabled) {
+        if (startBtn && !startBtn.disabled) {
           startBtn.click();
         }
       }
@@ -626,53 +527,13 @@ class EventManager {
         // すべてのタブパネルを非表示
         tabPanels.forEach(panel => panel.classList.remove('active'));
         // 対象のタブパネルを表示
-        document.getElementById(`${targetTab}-tab`).classList.add('active');
+        const targetPanel = document.getElementById(`${targetTab}-tab`);
+        if (targetPanel) {
+          targetPanel.classList.add('active');
+        }
       });
     });
   }
   
-  updateOptionsDisplay() {
-    const container = document.getElementById('optionsContainer');
-    container.innerHTML = '';
-    
-    this.app.optionsManager.getOptions().forEach((option, index) => {
-      const optionItem = document.createElement('div');
-      optionItem.className = option.enabled ? 'option-item' : 'option-item disabled';
-      
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.className = 'option-checkbox';
-      checkbox.checked = option.enabled;
-      checkbox.addEventListener('change', (e) => {
-        this.app.optionsManager.toggleOption(index, e.target.checked);
-        this.updateOptionsDisplay();
-        this.app.renderer.draw();
-        this.app.settingsManager.saveSettings(this.app);
-      });
-      
-      const text = document.createElement('span');
-      text.className = 'option-text';
-      text.textContent = option.text;
-      
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'option-delete';
-      deleteBtn.textContent = '×';
-      deleteBtn.addEventListener('click', () => {
-        this.app.optionsManager.removeOption(index);
-        this.updateOptionsDisplay();
-        this.app.renderer.draw();
-        this.app.settingsManager.saveSettings(this.app);
-      });
-      
-      optionItem.appendChild(checkbox);
-      optionItem.appendChild(text);
-      optionItem.appendChild(deleteBtn);
-      container.appendChild(optionItem);
-    });
-  }
-}
 
-// アプリケーション初期化
-(() => {
-  new RouletteApp();
-})();
+}

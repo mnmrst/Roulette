@@ -1,73 +1,124 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simple Roulette</title>
-<link rel="stylesheet" href="styles.css">
+<title>Random Tools</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="roulette.css">
+    <link rel="stylesheet" href="amida.css">
 </head>
 <body>
 
 <div id="errorMessage" class="error-message" style="display: none;"></div>
 
 <div id="container">
-    <div class="main-content">
-        <div class="row-container">
-            <div class="column-container">
-                <canvas id="roulette" width="300" height="300"></canvas>
-                <button id="startBtn">Spin</button>
-            </div> 
-            <div class="side-panel">
-                <div class="tab-container">
-                    <div class="tab-buttons">
-                        <button class="tab-btn active" data-tab="options">Options</button>
-                        <button class="tab-btn" data-tab="history">History</button>
-                    </div>
-                    
-                    <div class="tab-content">
-                        <div id="options-tab" class="tab-panel active">
-                            <div class="options-section">
-                                <div class="options-container" id="optionsContainer">
-                                    <!-- 選択肢がここに動的に追加されます -->
+    <h1>Random Tools</h1>
+    
+    <!-- メインタブナビゲーション -->
+    <div class="main-tab-container">
+        <div class="main-tab-buttons">
+            <button class="main-tab-btn active" data-main-tab="roulette">Roulette</button>
+            <button class="main-tab-btn" data-main-tab="role-assignment">Role Assignment</button>
+        </div>
+        
+        <div class="main-tab-content">
+            <!-- ルーレットタブ -->
+            <div id="roulette-main-tab" class="main-tab-panel active">
+                <div class="main-content">
+                    <div class="row-container">
+                        <div class="column-container">
+                            <canvas id="roulette" width="300" height="300"></canvas>
+                            <button id="startBtn">Spin</button>
+                        </div> 
+                        <div class="side-panel">
+                            <div class="tab-container">
+                                <div class="tab-buttons">
+                                    <button class="tab-btn active" data-tab="options">Options</button>
+                                    <button class="tab-btn" data-tab="history">History</button>
                                 </div>
-                                <div class="add-option">
-                                    <input type="text" id="newOptionInput" placeholder="Add new option">
-                                    <button id="addOptionBtn">Add</button>
-                                </div>
-                                <div id="resultActions" class="result-actions">
-                                    <label class="toggle-option">
-                                        <input type="checkbox" id="disableResultOption">
-                                        Auto-disable
-                                    </label>
+                                
+                                <div class="tab-content">
+                                    <div id="options-tab" class="tab-panel active">
+                                        <div class="options-section">
+                                            <div class="options-textarea-container">
+                                                <label for="rouletteOptions">Options (one per line):</label>
+                                                <textarea id="rouletteOptions" placeholder="Option 1&#10;Option 2&#10;Option 3&#10;...">Apple
+Banana
+Orange
+Melon
+Grape
+Peach</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="history-tab" class="tab-panel">
+                                        <div class="results-log">
+                                            <div id="resultsContainer">
+                                                <!-- 結果ログがここに動的に追加されます -->
+                                            </div>
+                                            <div class="results-footer">
+                                                <button id="resetHistoryBtn" class="reset-btn">Reset</button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    
+                    <div class="roulette-results-section">
+                        <div id="result">
+                            <span class="result-label">Result:</span>
+                            <span class="result-value" id="resultValue"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Role Assignment Tab -->
+            <div id="role-assignment-main-tab" class="main-tab-panel">
+                <div class="main-content">
+                    <div class="role-assignment-container">
+                        <div class="role-assignment-controls">
+                            <div class="role-assignment-input-section">
+                                <div class="role-assignment-input-group">
+                                    <label for="roleAssignmentRoles">Roles (displayed in order from top):</label>
+                                    <textarea id="roleAssignmentRoles" placeholder="Role 1&#10;Role 2&#10;Role 3&#10;...">Villager
+Werewolf
+Seer
+Medium
+Madman</textarea>
+                                </div>
+                                <div class="role-assignment-input-group">
+                                    <label for="roleAssignmentUsernames">Usernames:</label>
+                                    <textarea id="roleAssignmentUsernames" placeholder="Username 1&#10;Username 2&#10;Username 3&#10;...">Alice
+Bob
+Charlie
+David
+Eve</textarea>
+                                </div>
+                            </div>
+                            <button id="startRoleAssignmentBtn">Start</button>
+                        </div>
                         
-                        <div id="history-tab" class="tab-panel">
-                            <div class="results-log">
-                                <div id="resultsContainer">
-                                    <!-- 結果ログがここに動的に追加されます -->
-                                </div>
-                                <div class="results-footer">
-                                    <button id="resetHistoryBtn" class="reset-btn">Reset</button>
-                                </div>
+                        <div class="role-assignment-display">
+                            <div class="role-assignment-result-list" id="roleAssignmentResultList">
+                                <!-- Results will be displayed here -->
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <div class="roulette-results-section">
-            <div id="result">
-                <span class="result-label">Result:</span>
-                <span class="result-value" id="resultValue"></span>
-            </div>
-        </div>
     </div>
 </div>
 
-<script src="script.js"></script>
+<script src="common.js"></script>
+<script src="roulette.js"></script>
+<script src="amida.js"></script>
+<script src="main.js"></script>
 
 </body>
 </html>

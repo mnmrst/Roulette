@@ -1,0 +1,201 @@
+/* Role Assignment Specific Styles */
+
+/* Role Assignment Styles */
+.role-assignment-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  height: 100%;
+}
+
+.role-assignment-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 800px;
+}
+
+.role-assignment-input-section {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+}
+
+.role-assignment-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.role-assignment-input-group label {
+  color: #374151;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: left;
+}
+
+.role-assignment-input-group textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+  background: white;
+}
+
+.role-assignment-input-group textarea:focus {
+  outline: none;
+  border-color: #68aaef;
+  box-shadow: 0 0 0 3px rgba(104, 170, 239, 0.1);
+}
+
+#startRoleAssignmentBtn {
+  background: linear-gradient(135deg, #68aaef 0%, #5a9ce8 100%);
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(104, 170, 239, 0.3);
+  align-self: center;
+  min-width: 150px;
+}
+
+#startRoleAssignmentBtn:hover {
+  background: linear-gradient(135deg, #5a9ce8 0%, #4a8cd8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(104, 170, 239, 0.4);
+}
+
+#startRoleAssignmentBtn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(104, 170, 239, 0.3);
+}
+
+#startRoleAssignmentBtn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.role-assignment-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+  flex: 1;
+}
+
+.role-assignment-result-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  background: white;
+  border-radius: 16px;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  padding: 18px;
+  min-height: 150px;
+  flex: 1;
+}
+
+.role-assignment-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.role-assignment-result-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.role-assignment-result-item.animated {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+.role-assignment-result-role {
+  font-weight: 600;
+  color: #374151;
+  font-size: 16px;
+}
+
+.role-assignment-result-username {
+  font-weight: 500;
+  color: #68aaef;
+  font-size: 16px;
+  padding: 8px 16px;
+  background: rgba(104, 170, 239, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(104, 170, 239, 0.2);
+}
+
+.role-assignment-result-item.highlight {
+  background: linear-gradient(135deg, #68aaef 0%, #5a9ce8 100%);
+  color: white;
+  border-color: #68aaef;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(104, 170, 239, 0.3);
+}
+
+.role-assignment-result-item.highlight .role-assignment-result-role {
+  color: white;
+}
+
+.role-assignment-result-item.highlight .role-assignment-result-username {
+  color: white;
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .role-assignment-input-section {
+    flex-direction: column;
+  }
+  
+  .role-assignment-controls {
+    max-width: 100%;
+  }
+  
+  .role-assignment-result-list {
+    padding: 14px;
+  }
+  
+  .role-assignment-result-item {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}
