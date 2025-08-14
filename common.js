@@ -26,7 +26,6 @@ class SettingsManager {
         localStorage.setItem(this.storageKeys.rouletteHistory, JSON.stringify(history));
       }
     } catch (error) {
-      console.error('設定の保存に失敗しました:', error);
       ErrorManager.showError('設定の保存に失敗しました');
     }
   }
@@ -48,7 +47,6 @@ class SettingsManager {
         }
       }
     } catch (error) {
-      console.error('設定の読み込みに失敗しました:', error);
       ErrorManager.showError('設定の読み込みに失敗しました');
     }
   }
@@ -64,7 +62,7 @@ class SettingsManager {
         localStorage.setItem(this.storageKeys[key], value);
       }
     } catch (error) {
-      console.error('テキストエリアの保存に失敗しました:', error);
+      // 保存エラーは静かに処理
     }
   }
   
@@ -79,7 +77,7 @@ class SettingsManager {
         return localStorage.getItem(this.storageKeys[key]) || '';
       }
     } catch (error) {
-      console.error('テキストエリアの読み込みに失敗しました:', error);
+      // 読み込みエラーは静かに処理
     }
     return '';
   }
@@ -110,7 +108,7 @@ class SettingsManager {
     try {
       localStorage.removeItem(key);
     } catch (error) {
-      console.error('設定の削除に失敗しました:', error);
+      // 削除エラーは静かに処理
     }
   }
   
@@ -123,7 +121,7 @@ class SettingsManager {
         localStorage.removeItem(key);
       });
     } catch (error) {
-      console.error('全設定の削除に失敗しました:', error);
+      // 削除エラーは静かに処理
     }
   }
 }
@@ -142,7 +140,6 @@ class HistoryManager {
    */
   addResult(result, angle = null) {
     if (!result || typeof result !== 'string') {
-      console.warn('無効な結果が渡されました:', result);
       return;
     }
     
@@ -188,8 +185,6 @@ class HistoryManager {
     if (Array.isArray(history)) {
       this.history = history.slice(0, this.maxHistory); // 最大履歴数を超えないように制限
       this.render();
-    } else {
-      console.warn('無効な履歴データが渡されました:', history);
     }
   }
   
@@ -199,7 +194,6 @@ class HistoryManager {
   render() {
     const container = document.getElementById('resultsContainer');
     if (!container) {
-      console.warn('結果コンテナが見つかりません');
       return;
     }
     
@@ -283,7 +277,6 @@ class ErrorManager {
    */
   static showError(message, duration = 3000) {
     if (!message || typeof message !== 'string') {
-      console.warn('無効なエラーメッセージが渡されました:', message);
       return;
     }
     
@@ -317,7 +310,6 @@ class ErrorManager {
   static displayError(message, duration) {
     const errorElement = document.getElementById('errorMessage');
     if (!errorElement) {
-      console.warn('エラーメッセージ要素が見つかりません');
       this.processErrorQueue();
       return;
     }
@@ -363,9 +355,6 @@ class DOMUtils {
    */
   static getElement(selector) {
     const element = document.querySelector(selector);
-    if (!element) {
-      console.warn(`要素が見つかりません: ${selector}`);
-    }
     return element;
   }
   

@@ -58,7 +58,7 @@ class RoleAssignmentManager {
       return this.validateInputs();
       
     } catch (error) {
-      console.error('入力値の取得に失敗しました:', error);
+      ErrorManager.showError('入力値の取得に失敗しました');
       return false;
     }
   }
@@ -129,7 +129,6 @@ class RoleAssignmentManager {
   assignRoles() {
     try {
       if (this.roles.length === 0 || this.usernames.length === 0) {
-        console.warn('ロールまたはユーザー名が不足しています');
         return false;
       }
       
@@ -145,11 +144,9 @@ class RoleAssignmentManager {
         };
       });
       
-      console.log('ロール割り当てが完了しました:', this.assignments);
       return true;
       
     } catch (error) {
-      console.error('ロール割り当てに失敗しました:', error);
       ErrorManager.showError('ロール割り当てに失敗しました');
       return false;
     }
@@ -162,7 +159,6 @@ class RoleAssignmentManager {
     try {
       const resultList = DOMUtils.getElement('#roleAssignmentResultList');
       if (!resultList) {
-        console.warn('結果リスト要素が見つかりません');
         return;
       }
       
@@ -174,7 +170,6 @@ class RoleAssignmentManager {
       });
       
     } catch (error) {
-      console.error('結果の表示に失敗しました:', error);
       ErrorManager.showError('結果の表示に失敗しました');
     }
   }
@@ -215,7 +210,6 @@ class RoleAssignmentManager {
    */
   async animateResults() {
     if (this.isAnimating) {
-      console.warn('アニメーションが既に実行中です');
       return;
     }
     
@@ -246,7 +240,7 @@ class RoleAssignmentManager {
       }
       
     } catch (error) {
-      console.error('アニメーションに失敗しました:', error);
+      ErrorManager.showError('アニメーションに失敗しました');
     } finally {
       this.isAnimating = false;
     }
@@ -264,7 +258,7 @@ class RoleAssignmentManager {
       this.assignments = [];
       
     } catch (error) {
-      console.error('結果のクリアに失敗しました:', error);
+      ErrorManager.showError('結果のクリアに失敗しました');
     }
   }
   
@@ -335,10 +329,8 @@ class RoleAssignmentEventManager {
       this.bindKeyboardEvents();
       
       this.isInitialized = true;
-      console.log('ロール割り当てイベントのバインドが完了しました');
       
     } catch (error) {
-      console.error('ロール割り当てイベントのバインドに失敗しました:', error);
       ErrorManager.showError('イベントの初期化に失敗しました');
     }
   }
@@ -438,7 +430,7 @@ class RoleAssignmentEventManager {
       }
       
     } catch (error) {
-      console.error('ボタン状態の更新に失敗しました:', error);
+      // ボタン状態更新のエラーは静かに処理
     }
   }
   
@@ -448,7 +440,6 @@ class RoleAssignmentEventManager {
   async handleStart() {
     try {
       if (this.roleAssignmentManager.isProcessing) {
-        console.warn('処理が既に実行中です');
         return;
       }
       
@@ -488,8 +479,7 @@ class RoleAssignmentEventManager {
       });
       
     } catch (error) {
-      console.error('開始処理に失敗しました:', error);
-      ErrorManager.showError('処理に失敗しました: ' + error.message);
+      ErrorManager.showError('処理に失敗しました');
     } finally {
       // ボタンを再有効化
       this.roleAssignmentManager.isProcessing = false;

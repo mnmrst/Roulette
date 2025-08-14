@@ -22,11 +22,8 @@ class MainApp {
   async init() {
     try {
       if (this.isInitialized) {
-        console.warn('アプリケーションは既に初期化されています');
         return;
       }
-      
-      console.log('アプリケーションを初期化中...');
       
       // メインタブマネージャーを初期化
       this.mainTabManager = new MainTabManager(this);
@@ -39,13 +36,11 @@ class MainApp {
       await this.initApp(initialTab);
       
       this.isInitialized = true;
-      console.log('アプリケーションの初期化が完了しました');
       
       // 初期化完了イベントを発火
       this.dispatchEvent('app:initialized', { tab: initialTab });
       
     } catch (error) {
-      console.error('アプリケーションの初期化に失敗しました:', error);
       ErrorManager.showError('アプリケーションの初期化に失敗しました');
     }
   }
@@ -69,11 +64,8 @@ class MainApp {
   async initApp(tabName) {
     try {
       if (this.apps.has(tabName)) {
-        console.log(`${tabName}アプリは既に初期化されています`);
         return;
       }
-      
-      console.log(`${tabName}アプリを初期化中...`);
       
       let app = null;
       
@@ -91,10 +83,8 @@ class MainApp {
       }
       
       this.apps.set(tabName, app);
-      console.log(`${tabName}アプリの初期化が完了しました`);
       
     } catch (error) {
-      console.error(`${tabName}アプリの初期化に失敗しました:`, error);
       ErrorManager.showError(`${tabName}アプリの初期化に失敗しました`);
     }
   }
@@ -105,8 +95,6 @@ class MainApp {
    */
   async onTabChange(tabName) {
     try {
-      console.log(`タブを切り替え中: ${tabName}`);
-      
       // アプリケーションが初期化されていない場合は初期化
       if (!this.apps.has(tabName)) {
         await this.initApp(tabName);
@@ -116,7 +104,6 @@ class MainApp {
       this.dispatchEvent('tab:changed', { tab: tabName });
       
     } catch (error) {
-      console.error('タブ切り替えに失敗しました:', error);
       ErrorManager.showError('タブ切り替えに失敗しました');
     }
   }
@@ -155,8 +142,6 @@ class MainApp {
    */
   destroy() {
     try {
-      console.log('アプリケーションを破棄中...');
-      
       // すべてのアプリケーションを破棄
       this.apps.forEach((app, tabName) => {
         if (app && typeof app.destroy === 'function') {
@@ -167,10 +152,8 @@ class MainApp {
       this.apps.clear();
       this.isInitialized = false;
       
-      console.log('アプリケーションの破棄が完了しました');
-      
     } catch (error) {
-      console.error('アプリケーションの破棄に失敗しました:', error);
+      // 破棄時のエラーは静かに処理
     }
   }
 }
@@ -196,10 +179,7 @@ class MainTabManager {
       this.bindTabEvents();
       this.bindKeyboardEvents();
       
-      console.log('メインタブのイベントバインドが完了しました');
-      
     } catch (error) {
-      console.error('メインタブのイベントバインドに失敗しました:', error);
       ErrorManager.showError('タブの初期化に失敗しました');
     }
   }
@@ -263,7 +243,6 @@ class MainTabManager {
       const targetTab = button.getAttribute('data-main-tab');
       
       if (!targetTab) {
-        console.warn('タブ名が設定されていません');
         return;
       }
       
@@ -275,7 +254,6 @@ class MainTabManager {
       await this.switchTab(targetTab);
       
     } catch (error) {
-      console.error('タブクリックの処理に失敗しました:', error);
       ErrorManager.showError('タブの切り替えに失敗しました');
     }
   }
@@ -317,7 +295,6 @@ class MainTabManager {
       this.mainApp.dispatchEvent('tab:switched', { tab: targetTab });
       
     } catch (error) {
-      console.error('タブ切り替えに失敗しました:', error);
       throw error;
     }
   }
@@ -360,13 +337,7 @@ class MainTabManager {
       mainApp = new MainApp();
       await mainApp.init();
       
-      // グローバルスコープに公開（デバッグ用）
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        window.mainApp = mainApp;
-      }
-      
     } catch (error) {
-      console.error('アプリケーションの初期化に失敗しました:', error);
       ErrorManager.showError('アプリケーションの初期化に失敗しました');
     }
   };
